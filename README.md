@@ -16,3 +16,13 @@ y las siguientes entradas digitales para el manejo de las columnas
 
 ## Actualización de la máquina de estados
 La máquina de estados para el debouncing de las teclas del teclado se actualiza una vez por ciclo en la llamada a la función `matrixKeypadUpdate` en `alarmDeactivationUpdate`.
+
+## Utilización de la clase Vector de la librería estándar
+El cambio a realizar es:
+
+```cpp
+
+    # include <vector>
+    std::vector<DigitalOut> keypadRowPins = {PB_3, PB_5, PC_7, PA_15};
+    std::vector<DigitalIn> keypadColPins  = {PB_12, PB_13, PB_15, PC_6};
+```

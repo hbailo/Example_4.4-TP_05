@@ -1,6 +1,7 @@
 //=====[Libraries]=============================================================
 
 #include "mbed.h"
+#include <vector>
 #include "arm_book_lib.h"
 
 //=====[Defines]===============================================================
@@ -46,8 +47,8 @@ UnbufferedSerial uartUsb(USBTX, USBRX, 115200);
 
 AnalogIn lm35(A1);
 
-DigitalOut keypadRowPins[KEYPAD_NUMBER_OF_ROWS] = {PB_3, PB_5, PC_7, PA_15};
-DigitalIn keypadColPins[KEYPAD_NUMBER_OF_COLS]  = {PB_12, PB_13, PB_15, PC_6};
+std::vector<DigitalOut> keypadRowPins = {PB_3, PB_5, PC_7, PA_15};
+std::vector<DigitalIn> keypadColPins  = {PB_12, PB_13, PB_15, PC_6};
 
 //=====[Declaration and initialization of public global variables]=============
 
@@ -542,6 +543,7 @@ char matrixKeypadScan()
     int row = 0;
     int col = 0;
     int i = 0;
+    char debugStr[128];
 
     for( row=0; row<KEYPAD_NUMBER_OF_ROWS; row++ ) {
 
@@ -553,6 +555,12 @@ char matrixKeypadScan()
 
         for( col=0; col<KEYPAD_NUMBER_OF_COLS; col++ ) {
             if( keypadColPins[col] == OFF ) {
+                sprintf(debugStr,  "Fila: %d, Columna: %d, Tecla: %c\r\n",
+                        row, col, 
+                        matrixKeypadIndexToCharArray[row*KEYPAD_NUMBER_OF_ROWS + col]);
+
+                uartUsb.write(debugStr, strlen(debugStr));
+
                 return matrixKeypadIndexToCharArray[row*KEYPAD_NUMBER_OF_ROWS + col];
             }
         }
@@ -565,6 +573,8 @@ char matrixKeypadUpdate()
     char keyDetected = '\0';
     char keyReleased = '\0';
 
+    char debugStr[128];
+
     switch( matrixKeypadState ) {
 
     case MATRIX_KEYPAD_SCANNING:
@@ -574,6 +584,12 @@ char matrixKeypadUpdate()
             accumulatedDebounceMatrixKeypadTime = 0;
             matrixKeypadState = MATRIX_KEYPAD_DEBOUNCE;
         }
+
+        sprintf(debugStr, 
+                "Estado: SCANNING, Debounce: %d ms, Key: %c\r\n",
+                accumulatedDebounceMatrixKeypadTime, 
+                keyDetected ? keyDetected : 'N');
+        uartUsb.write(debugStr, strlen(debugStr));        
         break;
 
     case MATRIX_KEYPAD_DEBOUNCE:
@@ -588,6 +604,14 @@ char matrixKeypadUpdate()
         }
         accumulatedDebounceMatrixKeypadTime =
             accumulatedDebounceMatrixKeypadTime + TIME_INCREMENT_MS;
+
+        // Imprimir estado y variables correspondientes
+        sprintf(debugStr, 
+                "Estado: DEBOUNCE, Debounce: %d ms, Key: %c\r\n",
+                accumulatedDebounceMatrixKeypadTime, 
+                keyDetected ? keyDetected : 'N');
+        uartUsb.write(debugStr, strlen(debugStr));            
+
         break;
 
     case MATRIX_KEYPAD_KEY_HOLD_PRESSED:
@@ -598,6 +622,13 @@ char matrixKeypadUpdate()
             }
             matrixKeypadState = MATRIX_KEYPAD_SCANNING;
         }
+
+        // Imprimir estado y variables correspondientes
+        sprintf(debugStr, 
+                "Estado: HOLD_PRESSED, Debounce: %d ms, Key: %c\r\n",
+                accumulatedDebounceMatrixKeypadTime, 
+                matrixKeypadLastKeyPressed);
+        uartUsb.write(debugStr, strlen(debugStr));        
         break;
 
     default:
